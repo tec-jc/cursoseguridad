@@ -1,11 +1,17 @@
 package com.curso.api.services.auth;
 
+import com.curso.api.dtos.auth.AuthenticationRequest;
+import com.curso.api.dtos.auth.AuthenticationResponse;
 import com.curso.api.dtos.user.RegisteredUser;
 import com.curso.api.dtos.user.SaveUser;
 import com.curso.api.persistence.entities.User;
 import com.curso.api.services.interfaces.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.AuthenticationManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +23,10 @@ public class AuthenticationService {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
     public RegisteredUser registerOneCustomer(SaveUser newUser){
         User user = userService.registerOneCustomer(newUser);
 
@@ -39,5 +49,33 @@ public class AuthenticationService {
         extraClaims.put("authorities",user.getAuthorities());
 
         return extraClaims;
+    }
+
+    public AuthenticationResponse login(AuthenticationRequest autRequest) {
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                autRequest.getUsername(), autRequest.getPassword()
+        );
+
+        authenticationManager.authenticate(authentication);
+
+        UserDetails user = userService.findOneByUsername(autRequest.getUsername()).get();
+        String jwt = jwtService.generateToken(user, generateExtraClaims((User) user));
+
+        AuthenticationResponse authRsp = new AuthenticationResponse();
+        authRsp.setJwt(jwt);
+
+        return authRsp;
+    }
+
+    public boolean validateToken(String jwt) {
+
+        try{
+            jwtService.extractUsername(jwt);
+            return true;
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return false;
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.curso.api.services.auth;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,19 +29,30 @@ public class JwtService {
         Date expiration = new Date((EXPIRATION_IN_MINUTES * 60 * 1000) + issuedAt.getTime());
 
         String jwt = Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(user.getUsername())
-                .setIssuedAt(issuedAt)
-                .setExpiration(expiration)
-                .setHeaderParam(Header.TYPE, Header.JWT_TYPE)
-                .signWith(generateKey(), SignatureAlgorithm.HS256)
+                .header()
+                .type("JWT")
+                .and()
+                .subject(user.getUsername())
+                .issuedAt(issuedAt)
+                .expiration(expiration)
+                .claims(extraClaims)
+                .signWith(generateKey(), Jwts.SIG.HS256)
                 .compact();
 
         return jwt;
     }
 
-    private Key generateKey() {
+    private SecretKey generateKey() {
         byte[] key = SECRET_KEY.getBytes();
         return Keys.hmacShaKeyFor(key);
+    }
+
+    public String extractUsername(String jwt) {
+        return extractAllClaims(jwt).getSubject();
+    }
+
+    private Claims extractAllClaims(String jwt) {
+        return Jwts.parser().verifyWith( generateKey() ).build()
+                .parseSignedClaims(jwt).getPayload();
     }
 }
