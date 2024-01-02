@@ -4,11 +4,13 @@ import com.curso.api.dtos.auth.AuthenticationRequest;
 import com.curso.api.dtos.auth.AuthenticationResponse;
 import com.curso.api.dtos.user.RegisteredUser;
 import com.curso.api.dtos.user.SaveUser;
+import com.curso.api.exceptions.ObjectNotFoundException;
 import com.curso.api.persistence.entities.User;
 import com.curso.api.services.interfaces.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -77,5 +79,15 @@ public class AuthenticationService {
             System.out.println(e.getMessage());
             return false;
         }
+    }
+
+    public User findLoggedInUser() {
+
+        UsernamePasswordAuthenticationToken auth =
+                (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+
+        String username = (String) auth.getPrincipal();
+        return userService.findOneByUsername(username)
+                .orElseThrow(() -> new ObjectNotFoundException("User not found. Username: " + username));
     }
 }
