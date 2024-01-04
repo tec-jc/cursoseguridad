@@ -34,7 +34,7 @@ public class HttpSecurityConfig {
                 .authenticationProvider(daoAuthProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests( authReqConfig -> {
-                    buildRequestMatcher(authReqConfig);
+                    //buildRequestMatcher(authReqConfig);
                     //buildRequestMatcherPermissions(authReqConfig);
                     //buildRequestMatcherRoles(authReqConfig);
                 } )
